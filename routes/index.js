@@ -3,7 +3,10 @@ var router = express.Router();
 
 /* GET home page. */
 router.get('/', function(req, res, next) {
-  res.render('index', { title: 'Express' });
+  // res.render('sign-up', { title: 'Express' });
+  console.log(req.session);
+  console.log(req.sessionID);
+  res.send("This is the default page")
 });
 
 module.exports = router;

@@ -1,87 +1,109 @@
-// require in express
-var express = require('express');
-// require in express.router()
-var router = express.Router();
-// requiring in the data from userController.js file
-const userController = require("./controller/userController")
+const express = require("express");
+const router = express.Router();
+const axios = require("axios");
+const {
+  getAllUsers,
+  signup,
+  login,
+  deleteUserByEmail,
+  deleteUserByID,
+  updateUserByID,
+  updateUserByEmail,
+} = require("./controller/userController");
+const { checkSignupInputIsEmpty } = require("./lib/checkSignup");
+const { checkSignupDataType } = require("./lib/checkSignupDataType");
+const {
+  checkLoginEmptyMiddleware,
+  checkEmailFormat,
+} = require("./lib/checkLogin");
+
+router.get("/create-user", function (req, res) {
+
+  if (req.session.user) {
+    res.redirect("/users/home");
+  } else {
+    res.render("sign-up");
+  }
+});
+
+router.get("/login", function (req, res) {
+  if (req.session.user) {
+    res.redirect("/users/home");
+  } else {
+    res.render("login");
+  }
+});
 
 
+router.get("/home", async function (req, res) {
 
-router.get("/get-all-users", userController.getAllUsers);
+  if (req.session.user) {
+    res.render("home", { user: req.session.user.email });
+  } else {
+    res.render("message", { error: true });
+  }
 
-router.post("/create-user", userController.signup);
+});
 
-router.delete("/delete-user-by-id/:id", userController.deleteUserByID);
 
-router.delete("/delete-user-by-email", userController.deleteUserByEmail);
+router.post("/home", async function (req, res) {
+  if (req.session.user) {
+    try {
+      let result = await axios.get(
+        `https://api.giphy.com/v1/gifs/search?api_key=${process.env.GIPHY_API_KEY}&q=${req.body.search}`
+      );
+      console.log(result.data);
+      res.render("home", { data: result.data, user: req.session.user.email });
+    } catch (e) {
+      res.status(500).json({
+        message: "failure",
+        data: e.message,
+      });
+    }
+  } else {
+    res.render("message", { error: true });
+  }
+});
 
+router.post(
+  "/create-user",
+  checkSignupInputIsEmpty,
+  checkSignupDataType,
+  signup
+);
+
+
+// login
+router.post("/login", checkLoginEmptyMiddleware, checkEmailFormat, login);
+
+// delete user by id
+router.delete("/delete-user-by-id/:id", deleteUserByID);
+
+// delete user by email
+router.delete("/delete-user-by-email", deleteUserByEmail);
+
+// update user by id
+router.put("/update-user-by-id/:id", updateUserByID);
+
+// update user by email
+// router.put("/update-user-by-email/:email", userController.updateUserByEmail);
+router.put("/update-user-by-email/", updateUserByEmail);
+
+// logout
+router.get("/logout", function (req, res) {
+
+  req.session.destroy(); // server side
+
+  res.clearCookie("connect.sid", { // client side
+    path:"/",
+    httpOnly: true,
+    secure: false,
+    maxAge: null,
+  })
+
+  res.redirect("/users/login");
+
+});
+
+// export router
 module.exports = router;
-
-
-
-/* GET users listing. */
-// router.get('/', function (req, res, next) {
-//   res.send('respond with a resource');
-// });
-
-
-// // V3 PROMISES
-// router.post("/create-user", function (req, res) {
-//   userController
-//     .signup(req.body)
-//     .then((createdUser) => {
-//       res.status(200).json({
-//         message: "User Created",
-//         user: createdUser,
-//       });
-//     })
-//     .catch((error) => {
-//       res.status(400).json({
-//         message: "ERROR",
-//         errMessage: error.message,
-//       });
-//     });
-// });
-
-
-// V2 CALLBACK
-// router.post("/create-user", function (req, res) {
-//   userController.signup(req.body, function (err, createdUser) {
-//     if (err) {
-//       res.status(400).json({
-//         message: "ERROR",
-//         errMessage: err.message
-//       });
-//     } else {
-//       res.status(200).json({
-//         message: "User Created",
-//         user: createdUser,
-//       });
-//     }
-//   });
-// });
-
-
-// OTHER VERSION
-//v1
-// router.post("/create-user", function (req, res) {
-//   const createdUser = new User({
-//     firstName: req.body.firstName,
-//     lastName: req.body.lastName,
-//     email: req.body.email,
-//     password: req.body.password,
-//   });
-//   createdUser.save(function (err, userCreated) {
-//     if (err) {
-//       res.status(400).json({
-//         message: "ERROR",
-//         errMessage: err.message,
-//       });
-//     } else {
-//       res.status(200).json({
-//         message: "User Created",
-//         user: userCreated,
-//       });
-//     }
-//   });
-// });

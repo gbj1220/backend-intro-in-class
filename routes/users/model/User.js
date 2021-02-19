@@ -1,19 +1,22 @@
-// this is the cookie cutter
 const mongoose = require("mongoose");
 
 const userSchema = new mongoose.Schema({
 
   firstName: {
-    type: String
+    type: String,
+
   },
   lastName: {
-    type: String
+    type: String,
+
   },
   email: {
-    type: String
+    type: String,
+
   },
   password: {
-    type: String
+    type: String,
+
   },
 
 });
