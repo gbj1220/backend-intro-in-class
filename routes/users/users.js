@@ -9,6 +9,11 @@ const {
   deleteUserByID,
   updateUserByID,
   updateUserByEmail,
+  clearCookies,
+  homePage,
+  checkIfUser,
+  logInUser,
+  createUser,
 } = require("./controller/userController");
 const { checkSignupInputIsEmpty } = require("./lib/checkSignup");
 const { checkSignupDataType } = require("./lib/checkSignupDataType");
@@ -17,61 +22,21 @@ const {
   checkEmailFormat,
 } = require("./lib/checkLogin");
 
-router.get("/create-user", function (req, res) {
 
-  if (req.session.user) {
-    res.redirect("/users/home");
-  } else {
-    res.render("sign-up");
-  }
-});
+// create a new user
+router.get("/create-user", createUser);
 
-router.get("/login", function (req, res) {
-  if (req.session.user) {
-    res.redirect("/users/home");
-  } else {
-    res.render("login");
-  }
-});
+// log user in 
+router.get("/login", logInUser);
 
+// check if user info matches records
+router.get("/home", checkIfUser);
 
-router.get("/home", async function (req, res) {
+// render home page
+router.post("/home", homePage);
 
-  if (req.session.user) {
-    res.render("home", { user: req.session.user.email });
-  } else {
-    res.render("message", { error: true });
-  }
-
-});
-
-
-router.post("/home", async function (req, res) {
-  if (req.session.user) {
-    try {
-      let result = await axios.get(
-        `https://api.giphy.com/v1/gifs/search?api_key=${process.env.GIPHY_API_KEY}&q=${req.body.search}`
-      );
-      console.log(result.data);
-      res.render("home", { data: result.data, user: req.session.user.email });
-    } catch (e) {
-      res.status(500).json({
-        message: "failure",
-        data: e.message,
-      });
-    }
-  } else {
-    res.render("message", { error: true });
-  }
-});
-
-router.post(
-  "/create-user",
-  checkSignupInputIsEmpty,
-  checkSignupDataType,
-  signup
-);
-
+// create new user
+router.post("/create-user", checkSignupInputIsEmpty, checkSignupDataType, signup);
 
 // login
 router.post("/login", checkLoginEmptyMiddleware, checkEmailFormat, login);
@@ -90,20 +55,9 @@ router.put("/update-user-by-id/:id", updateUserByID);
 router.put("/update-user-by-email/", updateUserByEmail);
 
 // logout
-router.get("/logout", function (req, res) {
+router.get("/logout", clearCookies);
 
-  req.session.destroy(); // server side
 
-  res.clearCookie("connect.sid", { // client side
-    path:"/",
-    httpOnly: true,
-    secure: false,
-    maxAge: null,
-  })
-
-  res.redirect("/users/login");
-
-});
 
 // export router
 module.exports = router;

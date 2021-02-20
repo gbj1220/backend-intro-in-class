@@ -188,4 +188,66 @@ module.exports = {
     //send a message back saying
     //successfully logged In
   },
+
+  clearCookies: (req, res) => {
+
+    req.session.destroy(); // server side
+  
+    res.clearCookie("connect.sid", { // client side
+      path:"/",
+      httpOnly: true,
+      secure: false,
+      maxAge: null,
+    })
+  
+    res.redirect("/users/login");
+  
+  },
+
+  homePage: async (req, res) => {
+    if (req.session.user) {
+      try {
+        let result = await axios.get(
+          `https://api.giphy.com/v1/gifs/search?api_key=${process.env.GIPHY_API_KEY}&q=${req.body.search}`
+        );
+        console.log(result.data);
+        res.render("home", { data: result.data, user: req.session.user.email });
+      } catch (e) {
+        res.status(500).json({
+          message: "failure",
+          data: e.message,
+        });
+      }
+    } else {
+      res.render("message", { error: true });
+    }
+  },
+
+  checkIfUser: async function (req, res) {
+
+    if (req.session.user) {
+      res.render("home", { user: req.session.user.email });
+    } else {
+      res.render("message", { error: true });
+    }
+  
+  },
+
+  logInUser: (req, res) => {
+    if (req.session.user) {
+      res.redirect("/users/home");
+    } else {
+      res.render("login");
+    }
+  },
+
+  createUser: (req, res) => {
+
+    if (req.session.user) {
+      res.redirect("/users/home");
+    } else {
+      res.render("sign-up");
+    }
+  }
+
 };
